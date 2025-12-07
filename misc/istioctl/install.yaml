@@ -1,0 +1,35 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  profile: ambient
+  namespace: istio-system
+  meshConfig:
+    defaultConfig:
+      gatewayTopology:
+        numTrustedProxies: 1
+        forwardClientCertDetails: APPEND_FORWARD
+  components:
+    base:
+      enabled: true
+    pilot:
+      enabled: true
+      namespace: istio-system
+    cni:
+      enabled: true
+      namespace: istio-system
+    ingressGateways:
+      - enabled: true
+        namespace: istio-system
+        name: master
+        k8s:
+          service:
+            type: LoadBalancer
+            loadBalancerIP: 91.206.15.158
+            externalTrafficPolicy: Local
+  values:
+    pilot:
+      cni:
+        enabled: true
+    cni:
+      excludeNamespaces:
+        - istio-system
