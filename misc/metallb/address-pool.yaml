@@ -1,0 +1,9 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: master
+  namespace: metallb-system
+spec:
+  addresses:
+    - 91.206.15.158/32
+  autoAssign: false
