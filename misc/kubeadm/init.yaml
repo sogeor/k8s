@@ -47,9 +47,3 @@ networking:
   podSubnet: 10.244.0.0/24
 proxy: {}
 scheduler: {}
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: "ipvs"
-ipvs:
-  strictARP: true
