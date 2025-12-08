@@ -1,0 +1,27 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: oauth2-proxy
+  namespace: service
+spec:
+  hosts:
+    - "service.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - match:
+        - uri:
+            prefix: /oauth2
+        - uri:
+            prefix: /alertmanager
+        - uri:
+            prefix: /grafana
+        - uri:
+            prefix: /prometheus
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: oauth2-proxy.service.svc.cluster.local
+  exportTo:
+    - "istio-system"

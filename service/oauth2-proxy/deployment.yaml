@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.13.0-alpine
+          ports:
+            - containerPort: 4180
+              protocol: TCP
+              name: http
+            - containerPort: 9090
+              protocol: TCP
+              name: http-metrics
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            periodSeconds: 5
+            failureThreshold: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 4180
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            periodSeconds: 5
+            failureThreshold: 3
+          env:
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy
+                  key: client-id
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy
+                  key: client-secret
+            - name: COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: oauth2-proxy
+                  key: cookie-secret
+          args:
+            - "--client-id=$(CLIENT_ID)"
+            - "--client-secret=$(CLIENT_SECRET)"
+            - "--cookie-secret=$(COOKIE_SECRET)"
+            - "--http-address=0.0.0.0:4180"
+            - "--metrics-address=0.0.0.0:9090"
+            - "--code-challenge-method=S256"
+            - "--oidc-issuer-url=https://sso.sogeor.com/realms/system"
+            - "--provider=keycloak-oidc"
+            - "--exclude-logging-path=/ping,/ready"
+            - "--email-domain=*"
+            - "--redirect-url=https://service.sogeor.com/oauth2/callback"
+            - "--reverse-proxy=true"
+            - "--skip-provider-button=true"
+            - "--whitelist-domain=service.sogeor.com"
+            - "--allowed-role=operator"
+            - "--upstream=http://alertmanager.monitoring.svc.cluster.local:8080/alertmanager/"
+            - "--upstream=http://grafana.service.svc.cluster.local:8080/grafana/"
+            - "--upstream=http://prometheus.monitoring.svc.cluster.local:8080/prometheus/"
