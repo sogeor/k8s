@@ -5,6 +5,12 @@ metadata:
   namespace: istio-system
 spec:
   jwtRules:
+    - issuer: "https://sso.sogeor.com/realms/master"
+      jwksUri: https://sso.sogeor.com/realms/master/protocol/openid-connect/certs
+      forwardOriginalToken: true
     - issuer: "https://sso.sogeor.com/realms/system"
       jwksUri: https://sso.sogeor.com/realms/system/protocol/openid-connect/certs
+      forwardOriginalToken: true
+    - issuer: "https://sso.sogeor.com/realms/public"
+      jwksUri: https://sso.sogeor.com/realms/public/protocol/openid-connect/certs
       forwardOriginalToken: true
