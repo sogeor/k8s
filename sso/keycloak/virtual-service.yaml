@@ -1,0 +1,27 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: keycloak
+  namespace: sso
+spec:
+  hosts:
+    - "sso.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - match:
+        - uri:
+            prefix: /realms
+        - uri:
+            prefix: /resources
+        - uri:
+            prefix: /.well-known
+        - uri:
+            prefix: /admin
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: keycloak.sso.svc.cluster.local
+  exportTo:
+    - "istio-system"

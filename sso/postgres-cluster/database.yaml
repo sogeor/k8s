@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: keycloak-postgres-cluster
+  namespace: sso
+spec:
+  cluster:
+    name: postgres-cluster
+  name: keycloak
+  owner: keycloak
+  encoding: "UTF8"

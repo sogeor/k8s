@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sso-postgres-cluster-volume-0
+  labels:
+    app.kubernetes.io/name: sso-postgres-cluster-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 16Gi
+  local:
+    path: /root/data/sso/postgres-cluster/volume-0
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - "maxwell"
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: native-storage
