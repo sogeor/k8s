@@ -1,0 +1,8 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: ClusterImageCatalog
+metadata:
+  name: master
+spec:
+  images:
+    - image: ghcr.io/cloudnative-pg/postgresql:18.0-system-trixie
+      major: 18
