@@ -1,0 +1,20 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: nexus-postgres-cluster
+  namespace: nexus
+spec:
+  cluster:
+    name: postgres-cluster
+  name: nexus
+  owner: nexus
+  encoding: "UTF8"
+  localeCollate: "en_US.UTF-8"
+  localeCType: "en_US.UTF-8"
+  template: "template0"
+  schemas:
+    - name: nexus
+      owner: nexus
+  extensions:
+    - name: pg_trgm
+      schema: nexus

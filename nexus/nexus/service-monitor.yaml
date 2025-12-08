@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nexus
+  namespace: nexus
+spec:
+  endpoints:
+    - interval: 15s
+      scrapeTimeout: 10s
+      path: /service/metrics/prometheus
+      basicAuth:
+        username:
+          name: nexus-prometheus-user
+          key: username
+          optional: false
+        password:
+          name: nexus-prometheus-user
+          key: password
+          optional: false
+      port: http
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nexus-service

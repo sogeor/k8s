@@ -1,0 +1,18 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: nexus
+  namespace: nexus
+spec:
+  hosts:
+    - "nexus.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - route:
+        - destination:
+            port:
+              number: 8080
+            host: nexus.nexus.svc.cluster.local
+  exportTo:
+    - "istio-system"

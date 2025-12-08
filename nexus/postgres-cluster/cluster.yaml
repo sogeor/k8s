@@ -1,0 +1,42 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-cluster
+  namespace: nexus
+#  annotations:
+#    cnpg.io/reconciliationLoop: "disabled"
+spec:
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: master
+    major: 18
+  imagePullPolicy: Always
+  instances: 3
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+  storage:
+    storageClass: native-storage
+    size: 16Gi
+    pvcTemplate:
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: nexus-postgres-cluster-volume
+  managed:
+    roles:
+      - name: nexus
+        passwordSecret:
+          name: nexus-postgres-cluster-role
+        login: true
+        createdb: true
+  monitoring:
+    tls:
+      enabled: true
+  resources:
+    limits:
+      memory: "1024Mi"
+      cpu: "100m"
+    requests:
+      memory: "512Mi"
+      cpu: "50m"

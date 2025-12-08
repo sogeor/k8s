@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nexus-volume
+  labels:
+    app.kubernetes.io/name: nexus-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 16Gi
+  local:
+    path: /root/data/nexus/nexus/volume
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - "maxwell"
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: native-storage

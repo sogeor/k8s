@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nexus-prometheus-user
+  namespace: nexus
+type: kubernetes.io/basic-auth
+stringData:
+  username: "nx-prometheus"
+  password: "ge5-5Q4-Qax-T2i"
