@@ -1,0 +1,25 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: robots
+  namespace: misc
+spec:
+  hosts:
+    - "api.sogeor.com"
+    - "nexus.sogeor.com"
+    - "service.sogeor.com"
+    - "sso.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - match:
+        - uri:
+            exact: /robots.txt
+      directResponse:
+        status: 200
+        body:
+          string: |
+            User-agent: *
+            Disallow: /
+  exportTo:
+    - "istio-system"
