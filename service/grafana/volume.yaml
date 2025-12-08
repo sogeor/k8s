@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: service-grafana-volume
+  labels:
+    app.kubernetes.io/name: service-grafana-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  local:
+    path: /root/data/service/grafana/volume
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - "maxwell"
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: native-storage
