@@ -79,5 +79,5 @@ spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: metrics-server
       volumes:
-        - emptyDir: { }
+        - emptyDir: {}
           name: tmp-dir
