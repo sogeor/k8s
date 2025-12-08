@@ -6,6 +6,8 @@
 
 > Обратите внимание: все действия выполняются на операционной системе `Ubuntu 24.04.3 LTS` от имени пользователя `root`.
 
+### Подготовка основной части
+
 Для того чтобы развернуть инфраструктуру, выполните следующие команды:
 
 ```shell
@@ -141,31 +143,247 @@ curl -s "https://raw.githubusercontent.com/prometheus-operator/prometheus-operat
 kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.27/releases/cnpg-1.27.1.yaml
 kubectl apply -f misc/cnpg-system
 
+# secrets reflector
+kubectl -n kube-system apply -f https://github.com/emberstack/kubernetes-reflector/releases/latest/download/reflector.yaml
+
 # misc
 kubectl apply -f misc/namespace.yaml
 kubectl apply -f misc/native-storage.yaml
 kubectl apply -f misc/nexus-docker-secret.yaml
 kubectl apply -f misc/robots-virtual-service.yaml
+```
 
-# keycloak
+### Развертывание SSO сервера
+
+Для того чтобы начать работу с SSO сервером, выполните следующие команды:
+
+```shell
 mkdir -p /root/data/sso/postgres-cluster/volume-0
 mkdir /root/data/sso/postgres-cluster/volume-1
 mkdir /root/data/sso/postgres-cluster/volume-2
+cd /home/k8s
+git pull
 kubectl apply -f sso
+```
 
-# secrets reflector
-kubectl -n kube-system apply -f https://github.com/emberstack/kubernetes-reflector/releases/latest/download/reflector.yaml
+### Настройка SSO сервера
 
-# prometheus
-# TODO
+Из-за Istio первый вход в панель администратора не удастся, пока будет существовать `RequestAuthentication`. Собственно
+говоря, чтобы настроить Keycloak, введите следующие команды:
 
-# grafana
-# TODO
+```shell
+cd /home/k8s
+git pull
+kubectl detele -f misc/istio-system/request-authentication.yaml
+```
 
-# nexus
+Далее войдите в панель администратора, расположенную по адресу: https://sso.sogeor.com/admin. Выполните следующие
+действия в области `master`:
+
+1. Во вкладке `Groups` нажмите `Create group`.
+2. В открывшемся окне введите в поле имени `Cluster Operators` и нажмите `Create`.
+3. Выберите группу `Cluster Operators` в списке доступных.
+4. В разделе `Role mapping` нажмите `Assign role`, выберите `Realm roles`.
+5. В открывшемся окне поставьте галочку напротив роли `admin` и нажмите `Assign`.
+6. Во вкладке `Users` нажмите `Add user`.
+7. В поле `Required user actions` добавьте `Update Password`.
+8. В поле `Email verified` установите переключатель в положение `On`.
+9. Заполните поля `Username`, `Email`, `First name`, `Last name`.
+10. Нажмите `Join Groups`.
+11. В открывшемся окне поставьте галочку напротив группы `Cluster Operators` и нажмите `Join`.
+12. Нажмите `Create`.
+13. В разделе `Credentials` нажмите `Set password`.
+14. В поля `Password` и `Password confirmation` введите временный пароль.
+15. В поле `Temporary` установите переключатель в положение `On`.
+16. Нажмите `Save`, потом `Save password`.
+17. В правом верхнем углу нажмите на `bootstrap`, потом на `Sign out`.
+18. Войдите в свой аккаунт, используя временный пароль, заданный на 14 шаге.
+19. В разделе `Users` поставьте галочку напротив пользователя `bootstrap` и нажмите `Delete user`.
+20. В разделе `Manage realms` нажмите `Create realm`.
+21. В поле `Realm name` введите `public`.
+22. Нажмите `Create`.
+23. Нажмите `Create realm`.
+24. В поле `Realm name` введите `system`.
+25. Нажмите `Create`.
+26. В разделе `Clients` нажмите `Create client`.
+27. В поле `Client ID` введите `service-oauth2-proxy`.
+28. Нажмите `Next`.
+29. В поле `Client authentication` переключите переключатель в положение `On`.
+30. В поле `Authentication flow` оставьте галочку только у `Standard flow`.
+31. В поле `PKCE Method` выберите `S256`.
+32. Нажмите `Next`.
+33. В поле `Valid redirect URIs` добавьте `https://service.sogeor.com/oauth2/callback`.
+34. Нажмите `Save`.
+35. В разделе `Credentials` скопируйте и сохраните пароль из поля `Client Secret` — он понадобится для настройки OAuth
+    Proxy для мониторинга.
+36. Во вкладке `Realm roles` нажмите `Create role`.
+37. В поле `Role name` задайте `operator`.
+38. Нажмите `Save`.
+39. Во вкладке `Groups` нажмите `Create group`.
+40. В открывшемся окне введите в поле имени `Cluster Operators` и нажмите `Create`.
+41. Выберите группу `Cluster Operators` в списке доступных.
+42. В разделе `Role mapping` нажмите `Assign role`, выберите `Realm roles`.
+43. В открывшемся окне поставьте галочку напротив роли `operator` и нажмите `Assign`.
+44. Во вкладке `Users` нажмите `Create new user`.
+45. В поле `Required user actions` добавьте `Update Password`.
+46. В поле `Email verified` установите переключатель в положение `On`.
+47. Заполните поля `Username`, `Email`, `First name`, `Last name`.
+48. Нажмите `Join Groups`.
+49. В открывшемся окне поставьте галочку напротив группы `Cluster Operators` и нажмите `Join`.
+50. Нажмите `Create`.
+51. В разделе `Credentials` нажмите `Set password`.
+52. В поля `Password` и `Password confirmation` введите временный пароль и запомните его — он понадобится при входе в
+    OAuth Proxy для мониторинга.
+53. В поле `Temporary` установите переключатель в положение `On`.
+54. Нажмите `Save`, потом `Save password`.
+
+Далее необходимо применить `RequestAuthentication` обратно. Для этого выполните следующие команды:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f misc/istio-system/request-authentication.yaml
+```
+
+### Развертывание Prometheus
+
+Для того чтобы начать работу с Prometheus, выполните следующие команды:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f misc/monitoring/prometheus
+```
+
+### Развертывание Alert Manager
+
+Для того чтобы начать работу с Alert Manager, выполните следующие команды:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f misc/monitoring/alertmanager
+```
+
+### Развертывание OAuth Proxy для мониторинга
+
+Для того чтобы начать работу с OAuth Proxy, выполните следующие команды:
+
+```shell
+KC_SERVICE_OAUTH2_PROXY_PASSWORD= # Укажите здесь пароль, полученный на 35 шаге при настройке Keycloak
+kubectl create secret generic oauth2-proxy -n service \
+        --type='Opaque' \
+        --from-literal=client-id='service-oauth2-proxy' \
+        --from-literal=client-secret=${KC_SERVICE_OAUTH2_PROXY_PASSWORD} \
+        --from-literal=cookie-secret=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+cd /home/k8s
+git pull
+kubectl apply -f service/oauth2-proxy
+```
+
+### Развертывание Grafana
+
+Для того чтобы начать работу с Grafana, выполните следующие команды:
+
+```shell
+mkdir -p /root/data/service/grafana/volume
+cd /home/k8s
+git pull
+kubectl apply -f service/grafana
+```
+
+### Настройка Grafana
+
+Войдите в аккаунт администратора по адресу: https://service.sogeor.com/grafana. В качестве логина и пароля используйте
+`admin`. Поменяйте имя пользователя и прочие данные в профиле, если необходимо. Установите язык на русский.
+
+Далее необходимо подключить Prometheus к Grafana. Для этого выполните следующие действия:
+
+1. В разделе подключения выберите `Добавление нового подключения`, потом `Prometheus`.
+2. Нажмите `Добавить новый источник данных`.
+3. В поле `Prometheus server URL` введите `http://prometheus.monitoring.svc.cluster.local:8080/prometheus`.
+4. Нажмите `Сохранить и протестировать`.
+
+Также можно добавить некоторые панели в соответствующем разделе `Дашборды`, если требуется.
+
+### Развертывание Nexus Repository Manager
+
+Для того чтобы подготовить Nexus к работе, а также создать возможность для мониторинга его состояния, введите следующие
+команды:
+
+```shell
 mkdir -p /root/data/nexus/nexus/volume
 mkdir -p /root/data/nexus/postgres-cluster/volume-0
 mkdir /root/data/nexus/postgres-cluster/volume-1
 mkdir /root/data/nexus/postgres-cluster/volume-2
+cd /home/k8s
+git pull
 kubectl apply -f nexus
+```
+
+### Настройка Nexus Repository Manager
+
+Для того чтобы подготовить Nexus к работе, а также создать возможность для мониторинга его состояния, введите следующие
+команды:
+
+Далее войдите в аккаунт администратора, перейдя по адресу: https://nexus.sogeor.com и нажав на иконку человека в правом
+верхнем углу. Чтобы посмотреть временный пароль администратора, введите следующую команду:
+
+```shell
+cat /root/data/nexus/nexus/volume/admin.password
+```
+
+Теперь необходимо выполнить следующие действия:
+
+1. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
+2. Задайте поля `ID`, `Fist name`, `Last name`, `Email`, `Password`, `Confirm password`.
+3. В поле `Status` установите значение `Active`.
+4. В разделе `Roles` перетащите роль `nx-admin` в колонку `Granted`.
+5. Нажмите `Create local user`.
+6. Выберите пользователя `admin`.
+7. В поле `Status` установите значение `Disabled`.
+8. Нажмите `Save`.
+9. Перезайдите в Nexus, но под своим аккаунтом. Учтите, что нужно использовать значение из поля `ID`, а не `Email` в
+   качестве логина.
+10. В разделе `Settings -> Security -> Roles` нажмите `Create role`.
+11. В поле `Type` установите значение `Nexus role`.
+12. В поле `Role ID` установите значение `nx-github`.
+13. В поле `Role Name` установите значение `nx-github`.
+14. Нажмите `Modify Applied Privileges`.
+15. Найдите и поставьте галочку напротив: `nx-repository-admin-*-*-*` и `nx-repository-view-*-*-*`.
+16. Нажмите `Confirm`, потом `Save`.
+17. Нажмите `Create role`.
+18. В поле `Type` установите значение `Nexus role`.
+19. В поле `Role ID` установите значение `nx-prometheus`.
+20. В поле `Role Name` установите значение `nx-prometheus`.
+21. Нажмите `Modify Applied Privileges`.
+22. Найдите и поставьте галочку напротив `nx-metrics-all`.
+23. Нажмите `Confirm`, потом `Save`.
+24. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
+25. В поле `ID` установите значение `nx-github`.
+26. В поле `First name` установите значение `Github`.
+27. В поле `Last name` установите значение `Workflow`.
+28. В поле `Email` установите значение `example@gmail.com`.
+29. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для CI/CD.
+30. В поле `Status` установите значение `Active`.
+31. В разделе `Roles` перетащите роль `nx-github` в колонку `Granted`.
+32. Нажмите `Save`.
+33. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
+34. В поле `ID` установите значение `nx-prometheus`.
+35. В поле `First name` установите значение `Nexus`.
+36. В поле `Last name` установите значение `Prometheus`.
+37. В поле `Email` установите значение `example@gmail.com`.
+38. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для мониторинга Nexus.
+39. В поле `Status` установите значение `Active`.
+40. В разделе `Roles` перетащите роль `nx-prometheus` в колонку `Granted`.
+41. Нажмите `Save`.
+
+Далее необходимо сохранить пароль для мониторинга Nexus. Для этого выполните следующие команды:
+
+```shell
+NX_PROMETHEUS_PASSWORD= # Укажите здесь пароль, заданный на 38 шаге при настройке Nexus
+kubectl create secret generic nexus-prometheus-user -n nexus \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='nx-prometheus' \
+        --from-literal=password=${NX_PROMETHEUS_PASSWORD}
 ```
