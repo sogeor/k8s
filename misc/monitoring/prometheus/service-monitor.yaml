@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  endpoints:
+    - interval: 30s
+      path: /prometheus/metrics
+      port: http
+    - interval: 30s
+      port: http-reloader
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus-service

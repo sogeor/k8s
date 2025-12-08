@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  serviceAccountName: prometheus
+  externalUrl: "https://service.sogeor.com/prometheus"
+  routePrefix: /prometheus
+  replicas: 1
+  alerting:
+    alertmanagers:
+      - name: alertmanager
+        namespace: monitoring
+        port: http
+  resources:
+    requests:
+      memory: 400Mi
+  securityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceMonitorNamespaceSelector: { }
+  serviceMonitorSelector: { }
+  podMonitorNamespaceSelector: { }
+  podMonitorSelector: { }
+  probeNamespaceSelector: { }
+  probeSelector: { }
+  scrapeConfigNamespaceSelector: { }
+  scrapeConfigSelector: { }
