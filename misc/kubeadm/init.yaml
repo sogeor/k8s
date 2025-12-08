@@ -9,7 +9,7 @@ bootstrapTokens:
       - authentication
 kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: 91.206.15.158
+  advertiseAddress: 0.0.0.0
   bindPort: 6443
 nodeRegistration:
   criSocket: unix:///var/run/crio/crio.sock
