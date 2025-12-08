@@ -153,11 +153,40 @@ kubectl apply -f misc/nexus-docker-secret.yaml
 kubectl apply -f misc/robots-virtual-service.yaml
 ```
 
+### Настройка Cloudflare
+
+Для того чтобы настроить Cloudflare, выполните следующие действия:
+
+1. Войдите в Cloudflare Dashboard по адресу: https://dash.cloudflare.com.
+2. Выберите раздел `Account API tokens`.
+3. Нажмите `Create Token`.
+4. Возле `Edit zone DNS` нажмите `Use template`.
+5. В 3-м разделе поля `Zone Resources` выберите ваш домен (sogeor.com).
+6. Нажмите `Continue to summary`.
+7. Нажмите `Create Token`.
+8. Скопируйте API ключ и сохраните его для дальнейших действий.
+
+Чтобы Cert Manager мог работать с DNS записями домена самостоятельно, выполните следующие команды:
+
+```shell
+CLOUDFLARE_TOKEN= # Укажите здесь API токен, полученный на 8 шаге при работе с Cloudflare
+kubectl create secret generic cloudflare -n istio-system \
+        --type='Opaque' \
+        --from-literal=token=${CLOUDFLARE_TOKEN}
+```
+
+> Чтобы задать свой логин Cloudflare, обратитесь к полю `email` в файле `misc/istio-system/letsencrypt.yaml`.
+
 ### Развертывание SSO сервера
 
 Для того чтобы начать работу с SSO сервером, выполните следующие команды:
 
 ```shell
+kubectl create secret generic keycloak-postgres-cluster-role -n sso \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='keycloak' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret keycloak-postgres-cluster-role -n sso "cnpg.io/reload=true"
 mkdir -p /root/data/sso/postgres-cluster/volume-0
 mkdir /root/data/sso/postgres-cluster/volume-1
 mkdir /root/data/sso/postgres-cluster/volume-2
@@ -177,8 +206,20 @@ git pull
 kubectl detele -f misc/istio-system/request-authentication.yaml
 ```
 
+Теперь создайте пароль для bootstrap пользователя, используя следующие команды:
+
+```shell
+KC_BOOTSTRAP_PASSWORD= # Укажите здесь любой пароль для bootstrap пользователя
+kubectl create secret generic keycloak-bootstrap-secret -n sso \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='bootstrap' \
+        --from-literal=password=${KC_BOOTSTRAP_PASSWORD}
+```
+
 Далее войдите в панель администратора, расположенную по адресу: https://sso.sogeor.com/admin. Выполните следующие
 действия в области `master`:
+
+> При входе в панель используйте логин `bootstrap` и пароль, указанный на предыдущем шаге.
 
 1. Во вкладке `Groups` нажмите `Create group`.
 2. В открывшемся окне введите в поле имени `Cluster Operators` и нажмите `Create`.
@@ -312,6 +353,11 @@ kubectl apply -f service/grafana
 команды:
 
 ```shell
+kubectl create secret generic nexus-postgres-cluster-role -n nexus \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='nexus' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret nexus-postgres-cluster-role -n nexus "cnpg.io/reload=true"
 mkdir -p /root/data/nexus/nexus/volume
 mkdir -p /root/data/nexus/postgres-cluster/volume-0
 mkdir /root/data/nexus/postgres-cluster/volume-1
@@ -359,31 +405,141 @@ cat /root/data/nexus/nexus/volume/admin.password
 21. Нажмите `Modify Applied Privileges`.
 22. Найдите и поставьте галочку напротив `nx-metrics-all`.
 23. Нажмите `Confirm`, потом `Save`.
-24. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
-25. В поле `ID` установите значение `nx-github`.
-26. В поле `First name` установите значение `Github`.
-27. В поле `Last name` установите значение `Workflow`.
-28. В поле `Email` установите значение `example@gmail.com`.
-29. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для CI/CD.
-30. В поле `Status` установите значение `Active`.
-31. В разделе `Roles` перетащите роль `nx-github` в колонку `Granted`.
-32. Нажмите `Save`.
-33. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
-34. В поле `ID` установите значение `nx-prometheus`.
-35. В поле `First name` установите значение `Nexus`.
-36. В поле `Last name` установите значение `Prometheus`.
-37. В поле `Email` установите значение `example@gmail.com`.
-38. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для мониторинга Nexus.
-39. В поле `Status` установите значение `Active`.
-40. В разделе `Roles` перетащите роль `nx-prometheus` в колонку `Granted`.
-41. Нажмите `Save`.
+24. Нажмите `Create role`.
+25. В поле `Type` установите значение `Nexus role`.
+26. В поле `Role ID` установите значение `nx-k8s`.
+27. В поле `Role Name` установите значение `nx-k8s`.
+28. Нажмите `Modify Applied Privileges`.
+29. Найдите и поставьте галочку напротив: `nx-repository-admin-docker-docker-github-browse`,
+    `nx-repository-admin-docker-docker-github-read`, `nx-repository-admin-docker-docker-hub-browse`,
+    `nx-repository-admin-docker-docker-hub-read`, `nx-repository-admin-docker-docker-public-browse`,
+    `nx-repository-admin-docker-docker-public-read`, `nx-repository-admin-docker-docker-releases-browse`,
+    `nx-repository-admin-docker-docker-releases-read`, `nx-repository-admin-docker-docker-snapshots-browse` и
+    `nx-repository-admin-docker-docker-snapshots-read`.
+30. Нажмите `Confirm`, потом `Save`.
+31. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
+32. В поле `ID` установите значение `nx-github`.
+33. В поле `First name` установите значение `Github`.
+34. В поле `Last name` установите значение `Workflow`.
+35. В поле `Email` установите значение `example@gmail.com`.
+36. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для CI/CD.
+37. В поле `Status` установите значение `Active`.
+38. В разделе `Roles` перетащите роль `nx-github` в колонку `Granted`.
+39. Нажмите `Save`.
+40. Нажмите `Create local user`.
+41. В поле `ID` установите значение `nx-prometheus`.
+42. В поле `First name` установите значение `Nexus`.
+43. В поле `Last name` установите значение `Prometheus`.
+44. В поле `Email` установите значение `example@gmail.com`.
+45. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для мониторинга Nexus.
+46. В поле `Status` установите значение `Active`.
+47. В разделе `Roles` перетащите роль `nx-prometheus` в колонку `Granted`.
+48. Нажмите `Save`.
+49. Нажмите `Create local user`.
+50. В поле `ID` установите значение `nx-k8s`.
+51. В поле `First name` установите значение `K8s`.
+52. В поле `Last name` установите значение `Cluster`.
+53. В поле `Email` установите значение `example@gmail.com`.
+54. Задайте поля `Password` и `Confirm password`, а также запомните пароль — он понадобится для K8s.
+55. В поле `Status` установите значение `Active`.
+56. В разделе `Roles` перетащите роль `nx-k8s` в колонку `Granted`.
+57. Нажмите `Save`.
+58. В разделе `Realms` нажмите на `Docker Bearer Token Realm`, чтобы активировать.
+59. В разделе `Settings -> Repository -> Repositories` нажмите `nuget-group`.
+60. Нажмите `Delete repository`, потом `Yes`.
+61. Нажмите `nuget-hosted`, потом `Delete repository`, а после `Yes`.
+62. Нажмите `nuget-org-proxy`, потом `Delete repository`, а после `Yes`.
+63. Нажмите `Create repository`.
+64. Выберите `docker (proxy)`.
+65. В поле `Name` укажите `docker-github`.
+66. В поле `Enable Docker V1 API` поставьте галочку.
+67. В поле `Remote storage` укажите `https://ghcr.io`.
+68. В поле `Use the Nexus Repository truststore` поставьте галочку.
+69. Нажмите `View certificate`.
+70. Нажмите `Add certificate to truststore`.
+71. Нажмите `Create repository`.
+72. Нажмите `Create repository`.
+73. Выберите `docker (proxy)`.
+74. В поле `Name` укажите `docker-hub`.
+75. В поле `Enable Docker V1 API` поставьте галочку.
+76. В поле `Remote storage` укажите `https://registry-1.docker.io`.
+77. В поле `Use the Nexus Repository truststore` поставьте галочку.
+78. Нажмите `View certificate`.
+79. Нажмите `Add certificate to truststore`.
+80. Нажмите `Create repository`.
+81. Нажмите `Create repository`.
+82. Выберите `docker (hosted)`.
+83. В поле `Name` укажите `docker-releases`.
+84. В поле `Enable Docker V1 API` поставьте галочку.
+85. В поле `Deployment Policy` выберите `Disable redeploy`.
+86. В поле `Proprietary Components` поставьте галочку.
+87. В поле `Allow redeploy only on 'latest' tag` поставьте галочку.
+88. Нажмите `Create repository`.
+89. Нажмите `Create repository`.
+90. Выберите `docker (hosted)`.
+91. В поле `Name` укажите `docker-snapshots`.
+92. В поле `Enable Docker V1 API` поставьте галочку.
+93. В поле `Deployment Policy` выберите `Allow redeploy`.
+94. В поле `Proprietary Components` поставьте галочку.
+95. Нажмите `Create repository`.
+96. Нажмите `Create repository`.
+97. Выберите `docker (group)`.
+98. В поле `Name` укажите `docker-public`.
+99. В поле `Enable Docker V1 API` поставьте галочку.
+100. В поле `Member repositories` перетащите все репозитории в правую колонку и расположите их в следующем порядке:
+     `docker-snapshots`, `docker-releases`, `docker-hub`, `docker-github`.
+101. В поле `Proprietary Components` поставьте галочку.
+102. Нажмите `Create repository`.
 
 Далее необходимо сохранить пароль для мониторинга Nexus. Для этого выполните следующие команды:
 
 ```shell
-NX_PROMETHEUS_PASSWORD= # Укажите здесь пароль, заданный на 38 шаге при настройке Nexus
+NX_PROMETHEUS_PASSWORD= # Укажите здесь пароль, заданный на 45 шаге при настройке Nexus
 kubectl create secret generic nexus-prometheus-user -n nexus \
         --type='kubernetes.io/basic-auth' \
         --from-literal=username='nx-prometheus' \
         --from-literal=password=${NX_PROMETHEUS_PASSWORD}
+```
+
+### Создание токенов для Docker образов в Nexus
+
+Для того чтобы создать токены и сохранить их в K8s, выполните следующие команды:
+
+```shell
+NX_K8S_PASSWORD= # Укажите здесь пароль, заданный на 54 шаге при настройке Nexus
+
+# https://nexus.sogeor.com/repository/docker-github/
+kubectl create secret docker-registry nexus-docker-github -n misc --docker-server=https://nexus.sogeor.com/repository/docker-github/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
+kubectl annotate secret nexus-docker-github -n misc \
+        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+
+# https://nexus.sogeor.com/repository/docker-hub/
+kubectl create secret docker-registry nexus-docker-hub -n misc --docker-server=https://nexus.sogeor.com/repository/docker-hub/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
+kubectl annotate secret nexus-docker-hub -n misc \
+        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+
+# https://nexus.sogeor.com/repository/docker-public/
+kubectl create secret docker-registry nexus-docker-public -n misc --docker-server=https://nexus.sogeor.com/repository/docker-public/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
+kubectl annotate secret nexus-docker-public -n misc \
+        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+
+# https://nexus.sogeor.com/repository/docker-releases/
+kubectl create secret docker-registry nexus-docker-releases -n misc --docker-server=https://nexus.sogeor.com/repository/docker-releases/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
+kubectl annotate secret nexus-docker-releases -n misc \
+        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+
+# https://nexus.sogeor.com/repository/docker-snapshots/
+kubectl create secret docker-registry nexus-docker-snapshots -n misc --docker-server=https://nexus.sogeor.com/repository/docker-snapshots/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
+kubectl annotate secret nexus-docker-snapshots -n misc \
+        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
 ```
