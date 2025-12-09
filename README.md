@@ -149,7 +149,6 @@ kubectl -n kube-system apply -f https://github.com/emberstack/kubernetes-reflect
 # misc
 kubectl apply -f misc/namespace.yaml
 kubectl apply -f misc/native-storage.yaml
-kubectl apply -f misc/nexus-docker-secret.yaml
 kubectl apply -f misc/robots-virtual-service.yaml
 ```
 
@@ -257,26 +256,42 @@ kubectl create secret generic keycloak-bootstrap-secret -n sso \
 34. Нажмите `Save`.
 35. В разделе `Credentials` скопируйте и сохраните пароль из поля `Client Secret` — он понадобится для настройки OAuth
     Proxy для мониторинга.
-36. Во вкладке `Realm roles` нажмите `Create role`.
-37. В поле `Role name` задайте `operator`.
-38. Нажмите `Save`.
-39. Во вкладке `Groups` нажмите `Create group`.
-40. В открывшемся окне введите в поле имени `Cluster Operators` и нажмите `Create`.
-41. Выберите группу `Cluster Operators` в списке доступных.
-42. В разделе `Role mapping` нажмите `Assign role`, выберите `Realm roles`.
-43. В открывшемся окне поставьте галочку напротив роли `operator` и нажмите `Assign`.
-44. Во вкладке `Users` нажмите `Create new user`.
-45. В поле `Required user actions` добавьте `Update Password`.
-46. В поле `Email verified` установите переключатель в положение `On`.
-47. Заполните поля `Username`, `Email`, `First name`, `Last name`.
-48. Нажмите `Join Groups`.
-49. В открывшемся окне поставьте галочку напротив группы `Cluster Operators` и нажмите `Join`.
-50. Нажмите `Create`.
-51. В разделе `Credentials` нажмите `Set password`.
-52. В поля `Password` и `Password confirmation` введите временный пароль и запомните его — он понадобится при входе в
+36. В разделе `Clients` нажмите `Create client`.
+37. В поле `Client ID` введите `api-oauth2-proxy`.
+38. Нажмите `Next`.
+39. В поле `Client authentication` переключите переключатель в положение `On`.
+40. В поле `Authentication flow` оставьте галочку только у `Standard flow`.
+41. В поле `PKCE Method` выберите `S256`.
+42. Нажмите `Next`.
+43. В поле `Valid redirect URIs` добавьте `https://api.sogeor.com/oauth2/callback`.
+44. Нажмите `Save`.
+45. В разделе `Credentials` скопируйте и сохраните пароль из поля `Client Secret` — он понадобится для настройки OAuth
+    Proxy для микросервисов.
+46. Во вкладке `Realm roles` нажмите `Create role`.
+47. В поле `Role name` задайте `api-explorer`.
+48. Нажмите `Save`.
+49. Во вкладке `Realm roles` нажмите `Create role`.
+50. В поле `Role name` задайте `operator`.
+51. Нажмите `Save`.
+52. В разделе `Associated roles` нажмите `Assign role` и выберите `Realm roles`.
+53. В открывшемся окне поставьте галочку напротив роли `api-exporter` и нажмите `Assign`.
+54. Во вкладке `Groups` нажмите `Create group`.
+55. В открывшемся окне введите в поле имени `Cluster Operators` и нажмите `Create`.
+56. Выберите группу `Cluster Operators` в списке доступных.
+57. В разделе `Role mapping` нажмите `Assign role`, выберите `Realm roles`.
+58. В открывшемся окне поставьте галочку напротив роли `operator` и нажмите `Assign`.
+59. Во вкладке `Users` нажмите `Create new user`.
+60. В поле `Required user actions` добавьте `Update Password`.
+61. В поле `Email verified` установите переключатель в положение `On`.
+62. Заполните поля `Username`, `Email`, `First name`, `Last name`.
+63. Нажмите `Join Groups`.
+64. В открывшемся окне поставьте галочку напротив группы `Cluster Operators` и нажмите `Join`.
+65. Нажмите `Create`.
+66. В разделе `Credentials` нажмите `Set password`.
+67. В поля `Password` и `Password confirmation` введите временный пароль и запомните его — он понадобится при входе в
     OAuth Proxy для мониторинга.
-53. В поле `Temporary` установите переключатель в положение `On`.
-54. Нажмите `Save`, потом `Save password`.
+68. В поле `Temporary` установите переключатель в положение `On`.
+69. Нажмите `Save`, потом `Save password`.
 
 Далее необходимо применить `RequestAuthentication` обратно. Для этого выполните следующие команды:
 
@@ -542,4 +557,185 @@ kubectl annotate secret nexus-docker-snapshots -n misc \
         "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
         "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
         "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+```
+
+### Развертывание OAuth Proxy для микросервисов
+
+Для того чтобы начать работу с OAuth Proxy, выполните следующие команды:
+
+```shell
+KC_API_OAUTH2_PROXY_PASSWORD= # Укажите здесь пароль, полученный на 45 шаге при настройке Keycloak
+kubectl create secret generic oauth2-proxy -n api \
+        --type='Opaque' \
+        --from-literal=client-id='api-oauth2-proxy' \
+        --from-literal=client-secret=${KC_API_OAUTH2_PROXY_PASSWORD} \
+        --from-literal=cookie-secret=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+cd /home/k8s
+git pull
+kubectl apply -f api/oauth2-proxy
+```
+
+### Развертывание кластера PostgresSQL для микросервисов
+
+Для того чтобы начать работу с PostgresSQL кластером, выполните следующие команды:
+
+```shell
+# users-postgres-cluster-role
+kubectl create secret generic users-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='users' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret users-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# products-postgres-cluster-role
+kubectl create secret generic products-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='products' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret products-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# inventory-postgres-cluster-role
+kubectl create secret generic inventory-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='inventory' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret inventory-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# carts-postgres-cluster-role
+kubectl create secret generic carts-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='carts' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret carts-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# orders-postgres-cluster-role
+kubectl create secret generic orders-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='orders' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret orders-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# payments-postgres-cluster-role
+kubectl create secret generic payments-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='payments' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret payments-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# shipping-postgres-cluster-role
+kubectl create secret generic shipping-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='shipping' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret shipping-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# recommendations-postgres-cluster-role
+kubectl create secret generic recommendations-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='recommendations' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret recommendations-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# search-postgres-cluster-role
+kubectl create secret generic search-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='search' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret search-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+# notifications-postgres-cluster-role
+kubectl create secret generic notifications-postgres-cluster-role -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='notifications' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+kubectl label secret notifications-postgres-cluster-role -n api "cnpg.io/reload=true"
+
+mkdir -p /root/data/api/postgres-cluster/volume-0
+mkdir /root/data/api/postgres-cluster/volume-1
+mkdir /root/data/api/postgres-cluster/volume-2
+cd /home/k8s
+git pull
+kubectl apply -f api/postgres-cluster
+```
+
+### Развертывание кластера MongoDB для микросервисов
+
+Для того чтобы начать работу с MongoDB кластером, выполните следующие команды:
+
+```shell
+# users-mongodb-cluster-user
+kubectl create secret generic users-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='users' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# products-mongodb-cluster-user
+kubectl create secret generic products-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='products' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# inventory-mongodb-cluster-user
+kubectl create secret generic inventory-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='inventory' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# carts-mongodb-cluster-user
+kubectl create secret generic carts-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='carts' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# orders-mongodb-cluster-user
+kubectl create secret generic orders-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='orders' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# payments-mongodb-cluster-user
+kubectl create secret generic payments-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='payments' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# shipping-mongodb-cluster-user
+kubectl create secret generic shipping-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='shipping' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# recommendations-mongodb-cluster-user
+kubectl create secret generic recommendations-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='recommendations' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# search-mongodb-cluster-user
+kubectl create secret generic search-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='search' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# notifications-mongodb-cluster-user
+kubectl create secret generic notifications-mongodb-cluster-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='notifications' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+# mongodb-cluster-exporter-user
+kubectl create secret generic mongodb-cluster-exporter-user -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username='exporter' \
+        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+
+mkdir -p /root/data/api/mongodb-cluster/config-volume-0
+mkdir /root/data/api/mongodb-cluster/config-volume-1
+mkdir /root/data/api/mongodb-cluster/config-volume-2
+mkdir /root/data/api/mongodb-cluster/volume-0
+mkdir /root/data/api/mongodb-cluster/volume-1
+mkdir /root/data/api/mongodb-cluster/volume-2
+cd /home/k8s
+git pull
+kubectl apply -f api/mongodb-cluster
 ```
