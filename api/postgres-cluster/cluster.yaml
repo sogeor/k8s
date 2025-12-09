@@ -1,0 +1,87 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-cluster
+  namespace: api
+#  annotations:
+#    cnpg.io/reconciliationLoop: "disabled"
+spec:
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ClusterImageCatalog
+    name: master
+    major: 18
+  imagePullPolicy: Always
+  instances: 3
+  postgresql:
+    parameters:
+      shared_buffers: "256MB"
+  storage:
+    storageClass: native-storage
+    size: 16Gi
+    pvcTemplate:
+      selector:
+        matchLabels:
+          app.kubernetes.io/name: api-postgres-cluster-volume
+  managed:
+    roles:
+      - name: users
+        passwordSecret:
+          name: users-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: products
+        passwordSecret:
+          name: products-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: inventory
+        passwordSecret:
+          name: inventory-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: carts
+        passwordSecret:
+          name: carts-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: orders
+        passwordSecret:
+          name: orders-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: payments
+        passwordSecret:
+          name: payments-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: shipping
+        passwordSecret:
+          name: shipping-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: recommendations
+        passwordSecret:
+          name: recommendations-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: search
+        passwordSecret:
+          name: search-postgres-cluster-role
+        login: true
+        createdb: true
+      - name: notifications
+        passwordSecret:
+          name: notifications-postgres-cluster-role
+        login: true
+        createdb: true
+  monitoring:
+    tls:
+      enabled: true
+  resources:
+    limits:
+      memory: "1024Mi"
+      cpu: "100m"
+    requests:
+      memory: "512Mi"
+      cpu: "50m"
