@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: api-mongodb-cluster-config-volume-0
+  labels:
+    app.kubernetes.io/name: api-mongodb-cluster-config-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 4Gi
+  local:
+    path: /root/data/api/mongodb-cluster/config-volume-0
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - "maxwell"
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: native-storage

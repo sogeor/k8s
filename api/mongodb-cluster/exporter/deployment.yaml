@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-cluster-exporter
+  namespace: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mongodb-cluster-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mongodb-cluster-exporter
+    spec:
+      containers:
+        - name: master
+          image: percona/mongodb_exporter:0.40
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ "all" ]
+            readOnlyRootFilesystem: true
+            runAsGroup: 10000
+            runAsNonRoot: true
+            runAsUser: 10000
+          ports:
+            - containerPort: 9216
+              protocol: TCP
+              name: metrics
+          startupProbe:
+            httpGet:
+              path: /
+              port: metrics
+          readinessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: metrics
+            initialDelaySeconds: 10
+          env:
+            - name: MONGODB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-cluster-exporter-user
+                  key: username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-cluster-exporter-user
+                  key: password
+          args:
+            - "--mongodb.uri=mongodb://mongodb-cluster-mongos:27017/admin"
+      resources:
+        limits:
+          cpu: 250m
+          memory: 192Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi

@@ -1,0 +1,206 @@
+apiVersion: psmdb.percona.com/v1
+kind: PerconaServerMongoDB
+metadata:
+  name: mongodb-cluster
+  namespace: api
+  finalizers:
+    - percona.com/delete-psmdb-pods-in-order
+spec:
+  initImage: percona/percona-server-mongodb-operator:1.21.1
+  image: percona/percona-server-mongodb:8.0.12-4
+  imagePullPolicy: Always
+  enableVolumeExpansion: true
+  clusterServiceDNSMode: ServiceMesh
+  updateStrategy: SmartUpdate
+  upgradeOptions:
+    versionServiceEndpoint: https://check.percona.com
+    apply: Disabled
+    schedule: "0 2 * * *"
+    setFCV: true
+  replsets:
+    - name: rs0
+      size: 3
+      affinity:
+        antiAffinityTopologyKey: none
+      podDisruptionBudget:
+        minAvailable: 1
+      expose:
+        enabled: true
+        type: ClusterIP
+      resources:
+        limits:
+          cpu: "600m"
+          memory: "1Gi"
+        requests:
+          cpu: "300m"
+          memory: "1Gi"
+      volumeSpec:
+        persistentVolumeClaim:
+          storageClassName: native-storage
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: api-mongodb-cluster-volume
+          resources:
+            requests:
+              storage: 16Gi
+  #  pmm:
+  #    enabled: false
+  #    image: percona/pmm-client:3.4.1
+  #    serverHost: monitoring-service
+  #    containerSecurityContext: {}
+  #    customClusterName: configurations-mongodb-cluster
+  #    mongodParams: --environment=ENVIRONMENT
+  #    mongosParams: --environment=ENVIRONMENT
+  #    resources:
+  #      requests:
+  #        memory: 150M
+  #        cpu: 300m
+  #      limits:
+  #        memory: 256M
+  #        cpu: 400m
+  sharding:
+    enabled: true
+    configsvrReplSet:
+      size: 3
+      affinity:
+        antiAffinityTopologyKey: none
+      podDisruptionBudget:
+        minAvailable: 1
+      expose:
+        enabled: true
+        type: ClusterIP
+      resources:
+        limits:
+          cpu: "600m"
+          memory: "1Gi"
+        requests:
+          cpu: "300m"
+          memory: "1Gi"
+      volumeSpec:
+        persistentVolumeClaim:
+          storageClassName: native-storage
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: api-mongodb-cluster-config-volume
+          resources:
+            requests:
+              storage: 4Gi
+    mongos:
+      size: 3
+      affinity:
+        antiAffinityTopologyKey: none
+      podDisruptionBudget:
+        minAvailable: 1
+      resources:
+        limits:
+          cpu: "600m"
+          memory: "1Gi"
+        requests:
+          cpu: "300m"
+          memory: "1Gi"
+  roles:
+    - role: configurations
+      db: configurations
+      privileges:
+        - resource:
+            db: configurations
+            collection: ""
+          actions:
+            - find
+            - insert
+            - update
+            - remove
+            - createIndex
+            - dropIndex
+            - bypassDocumentValidation
+  users:
+    - name: exporter
+      db: admin
+      passwordSecretRef:
+        name: mongodb-cluster-exporter-user
+        key: password
+      roles:
+        - name: clusterMonitor
+          db: admin
+        - name: read
+          db: local
+    - name: users
+      db: admin
+      passwordSecretRef:
+        name: users-mongodb-cluster-user
+        key: password
+      roles:
+        - name: users
+          db: users
+    - name: products
+      db: admin
+      passwordSecretRef:
+        name: products-mongodb-cluster-user
+        key: password
+      roles:
+        - name: products
+          db: products
+    - name: inventory
+      db: admin
+      passwordSecretRef:
+        name: inventory-mongodb-cluster-user
+        key: password
+      roles:
+        - name: inventory
+          db: inventory
+    - name: carts
+      db: admin
+      passwordSecretRef:
+        name: carts-mongodb-cluster-user
+        key: password
+      roles:
+        - name: carts
+          db: carts
+    - name: orders
+      db: admin
+      passwordSecretRef:
+        name: orders-mongodb-cluster-user
+        key: password
+      roles:
+        - name: orders
+          db: orders
+    - name: payments
+      db: admin
+      passwordSecretRef:
+        name: payments-mongodb-cluster-user
+        key: password
+      roles:
+        - name: payments
+          db: payments
+    - name: shipping
+      db: admin
+      passwordSecretRef:
+        name: shipping-mongodb-cluster-user
+        key: password
+      roles:
+        - name: shipping
+          db: shipping
+    - name: recommendations
+      db: admin
+      passwordSecretRef:
+        name: recommendations-mongodb-cluster-user
+        key: password
+      roles:
+        - name: recommendations
+          db: recommendations
+    - name: search
+      db: admin
+      passwordSecretRef:
+        name: search-mongodb-cluster-user
+        key: password
+      roles:
+        - name: search
+          db: search
+    - name: notifications
+      db: admin
+      passwordSecretRef:
+        name: notifications-mongodb-cluster-user
+        key: password
+      roles:
+        - name: notifications
+          db: notifications
