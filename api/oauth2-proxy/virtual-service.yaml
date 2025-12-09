@@ -1,0 +1,23 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: oauth2-proxy
+  namespace: api
+spec:
+  hosts:
+    - "api.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - match:
+        - uri:
+            prefix: /oauth2
+        - uri:
+            regex: ^\/[^\/]+\/actuator(\/.*)?$
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: oauth2-proxy.api.svc.cluster.local
+  exportTo:
+    - "istio-system"
