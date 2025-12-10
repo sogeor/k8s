@@ -7,7 +7,7 @@ spec:
   serviceAccountName: prometheus
   externalUrl: "https://service.sogeor.com/prometheus"
   routePrefix: /prometheus
-  replicas: 1
+  replicas: 3
   alerting:
     alertmanagers:
       - name: alertmanager
