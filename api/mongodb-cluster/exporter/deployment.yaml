@@ -20,7 +20,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
-              drop: [ "all" ]
+              drop: ["all"]
             readOnlyRootFilesystem: true
             runAsGroup: 10000
             runAsNonRoot: true
