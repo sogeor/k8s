@@ -7,7 +7,7 @@ spec:
   serviceAccountName: alertmanager
   externalUrl: "https://service.sogeor.com/alertmanager"
   routePrefix: /alertmanager
-  replicas: 1
+  replicas: 3
   configSecret: alertmanager
   resources:
     limits:
