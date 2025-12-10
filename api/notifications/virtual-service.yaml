@@ -1,0 +1,22 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: notifications
+  namespace: api
+spec:
+  hosts:
+    - "api.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - match:
+        - uri:
+            prefix: /v1/notifications
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: notifications.api.svc.cluster.local
+            subset: v1
+  exportTo:
+    - "istio-system"
