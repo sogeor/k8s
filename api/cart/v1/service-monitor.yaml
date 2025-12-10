@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cart-v1
+  namespace: api
+spec:
+  endpoints:
+    - interval: 15s
+      scrapeTimeout: 10s
+      path: /v1/cart/actuator/prometheus
+      port: http-management
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cart-service
+      app.kubernetes.io/version: v1

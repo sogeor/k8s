@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-v1
+  namespace: api
+  labels:
+    app.kubernetes.io/name: cart
+    app.kubernetes.io/version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cart
+      app.kubernetes.io/version: v1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cart
+        app.kubernetes.io/version: v1
+    spec:
+      imagePullSecrets:
+        - name: nexus-docker-public
+      containers:
+        - name: cart
+          image: nexus.sogeor.com/docker-public/sogeor/user-service:master
+          imagePullPolicy: Always
+          env:
+            - name: DATASOURCE_URL
+              value: "jdbc:postgresql://postgres-cluster-pooler-rw:5432/cart"
+            - name: DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: cart-postgres-cluster-role
+                  key: username
+            - name: DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cart-postgres-cluster-role
+                  key: password
+            - name: MONGODB_HOST
+              value: "mongodb-cluster-mongos"
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: cart-mongodb-cluster-user
+                  key: username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cart-mongodb-cluster-user
+                  key: password
+            - name: KAFKA_URL
+              value: "http://kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: http-management
+              containerPort: 9090
+          startupProbe:
+            httpGet:
+              path: /v1/cart/actuator/health
+              port: http-management
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /v1/cart/actuator/health
+              port: http-management
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /v1/cart/actuator/health
+              port: http-management
+            periodSeconds: 30
+            failureThreshold: 6
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              memory: 512Mi
