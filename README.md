@@ -329,6 +329,17 @@ git pull
 kubectl apply -f misc/monitoring/alertmanager
 ```
 
+### Развертывание Alloy
+
+Для того чтобы начать работу с Alloy, выполните следующие команды:
+
+```shell
+mkdir -p /root/data/monitoring/alloy/volume
+cd /home/k8s
+git pull
+kubectl apply -f misc/monitoring/alloy
+```
+
 ### Развертывание OAuth Proxy для мониторинга
 
 Для того чтобы начать работу с OAuth Proxy, выполните следующие команды:
