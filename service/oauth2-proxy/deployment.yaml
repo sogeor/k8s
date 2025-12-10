@@ -74,5 +74,6 @@ spec:
             - "--whitelist-domain=service.sogeor.com"
             - "--allowed-role=operator"
             - "--upstream=http://alertmanager.monitoring.svc.cluster.local:8080/alertmanager/"
+            - "--upstream=http://alloy.monitoring.svc.cluster.local:8080/alloy/"
             - "--upstream=http://grafana.service.svc.cluster.local:8080/grafana/"
             - "--upstream=http://prometheus.monitoring.svc.cluster.local:8080/prometheus/"
