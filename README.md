@@ -143,6 +143,14 @@ curl -s "https://raw.githubusercontent.com/prometheus-operator/prometheus-operat
 kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.27/releases/cnpg-1.27.1.yaml
 kubectl apply -f misc/cnpg-system
 
+# mongodb operator
+kubectl apply --server-side -f https://raw.githubusercontent.com/percona/percona-server-mongodb-operator/v1.21.1/deploy/crd.yaml
+kubectl apply -f misc/psmdb
+
+# kafka operator
+kubectl apply -f kafka/namespace.yaml
+kubectl create -f 'https://strimzi.io/install/latest?namespace=kafka' -n kafka
+
 # secrets reflector
 kubectl -n kube-system apply -f https://github.com/emberstack/kubernetes-reflector/releases/latest/download/reflector.yaml
 
@@ -429,8 +437,9 @@ cat /root/data/nexus/nexus/volume/admin.password
     `nx-repository-admin-docker-docker-github-read`, `nx-repository-admin-docker-docker-hub-browse`,
     `nx-repository-admin-docker-docker-hub-read`, `nx-repository-admin-docker-docker-public-browse`,
     `nx-repository-admin-docker-docker-public-read`, `nx-repository-admin-docker-docker-releases-browse`,
-    `nx-repository-admin-docker-docker-releases-read`, `nx-repository-admin-docker-docker-snapshots-browse` и
-    `nx-repository-admin-docker-docker-snapshots-read`.
+    `nx-repository-admin-docker-docker-releases-read`, `nx-repository-admin-docker-docker-snapshots-browse`,
+    `nx-repository-admin-docker-docker-snapshots-read`, `nx-repository-view-docker-*-browse` и
+    `nx-repository-view-docker-*-read`.
 30. Нажмите `Confirm`, потом `Save`.
 31. В разделе `Settings -> Security -> Users` нажмите `Create local user`.
 32. В поле `ID` установите значение `nx-github`.
@@ -523,40 +532,29 @@ kubectl create secret generic nexus-prometheus-user -n nexus \
 ```shell
 NX_K8S_PASSWORD= # Укажите здесь пароль, заданный на 54 шаге при настройке Nexus
 
-# https://nexus.sogeor.com/repository/docker-github/
-kubectl create secret docker-registry nexus-docker-github -n misc --docker-server=https://nexus.sogeor.com/repository/docker-github/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
-kubectl annotate secret nexus-docker-github -n misc \
+for suffix in github hub public releases snapshots; do
+    kubectl create secret docker-registry nexus-docker-${suffix} -n misc --docker-server=https://nexus.sogeor.com/docker-${suffix}/ --docker-username=nx-k8s --docker-password=${NX_K8S_PASSWORD} --docker-email=example@gmail.com
+    kubectl annotate secret nexus-docker-${suffix} -n misc \
         "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
         "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,service"
+done
+```
 
-# https://nexus.sogeor.com/repository/docker-hub/
-kubectl create secret docker-registry nexus-docker-hub -n misc --docker-server=https://nexus.sogeor.com/repository/docker-hub/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
-kubectl annotate secret nexus-docker-hub -n misc \
-        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+### Развертывание Apache Kafka
 
-# https://nexus.sogeor.com/repository/docker-public/
-kubectl create secret docker-registry nexus-docker-public -n misc --docker-server=https://nexus.sogeor.com/repository/docker-public/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
-kubectl annotate secret nexus-docker-public -n misc \
-        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+Для того чтобы начать работу с Apache Kafka, выполните следующие команды:
 
-# https://nexus.sogeor.com/repository/docker-releases/
-kubectl create secret docker-registry nexus-docker-releases -n misc --docker-server=https://nexus.sogeor.com/repository/docker-releases/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
-kubectl annotate secret nexus-docker-releases -n misc \
-        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
-
-# https://nexus.sogeor.com/repository/docker-snapshots/
-kubectl create secret docker-registry nexus-docker-snapshots -n misc --docker-server=https://nexus.sogeor.com/repository/docker-snapshots/ --docker-username=nx-k8s --docker-password={NX_K8S_PASSWORD} --docker-email=example@gmail.com
-kubectl annotate secret nexus-docker-snapshots -n misc \
-        "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,nexus,service,sso"
+```shell
+mkdir -p /root/data/kafka/broker/volume-0
+mkdir /root/data/kafka/broker/volume-1
+mkdir /root/data/kafka/broker/volume-2
+mkdir -p /root/data/kafka/controller/volume-0
+mkdir /root/data/kafka/controller/volume-1
+mkdir /root/data/kafka/controller/volume-2
+cd /home/k8s
+git pull
+kubectl apply -f kafka
 ```
 
 ### Развертывание OAuth Proxy для микросервисов
@@ -575,80 +573,18 @@ git pull
 kubectl apply -f api/oauth2-proxy
 ```
 
-### Развертывание кластера PostgresSQL для микросервисов
+### Развертывание кластера PostgreSQL для микросервисов
 
-Для того чтобы начать работу с PostgresSQL кластером, выполните следующие команды:
+Для того чтобы начать работу с PostgreSQL кластером, выполните следующие команды:
 
 ```shell
-# users-postgres-cluster-role
-kubectl create secret generic users-postgres-cluster-role -n api \
+for service in cart inventory notifications orders payments products; do
+    kubectl create secret generic "${service}-postgres-cluster-role" -n api \
         --type='kubernetes.io/basic-auth' \
-        --from-literal=username='users' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret users-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# products-postgres-cluster-role
-kubectl create secret generic products-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='products' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret products-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# inventory-postgres-cluster-role
-kubectl create secret generic inventory-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='inventory' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret inventory-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# carts-postgres-cluster-role
-kubectl create secret generic carts-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='carts' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret carts-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# orders-postgres-cluster-role
-kubectl create secret generic orders-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='orders' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret orders-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# payments-postgres-cluster-role
-kubectl create secret generic payments-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='payments' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret payments-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# shipping-postgres-cluster-role
-kubectl create secret generic shipping-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='shipping' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret shipping-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# recommendations-postgres-cluster-role
-kubectl create secret generic recommendations-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='recommendations' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret recommendations-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# search-postgres-cluster-role
-kubectl create secret generic search-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='search' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret search-postgres-cluster-role -n api "cnpg.io/reload=true"
-
-# notifications-postgres-cluster-role
-kubectl create secret generic notifications-postgres-cluster-role -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='notifications' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-kubectl label secret notifications-postgres-cluster-role -n api "cnpg.io/reload=true"
+        --from-literal=username="${service}" \
+        --from-literal="password=$(shuf -er -n32 {A..Z} {a..z} {0..9} | tr -d '\n')"
+    kubectl label secret "${service}-postgres-cluster-role" -n api "cnpg.io/reload=true"
+done
 
 mkdir -p /root/data/api/postgres-cluster/volume-0
 mkdir /root/data/api/postgres-cluster/volume-1
@@ -663,71 +599,12 @@ kubectl apply -f api/postgres-cluster
 Для того чтобы начать работу с MongoDB кластером, выполните следующие команды:
 
 ```shell
-# users-mongodb-cluster-user
-kubectl create secret generic users-mongodb-cluster-user -n api \
+for service in cart inventory notifications orders payments products; do
+    kubectl create secret generic "${service}-mongodb-cluster-user" -n api \
         --type='kubernetes.io/basic-auth' \
-        --from-literal=username='users' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# products-mongodb-cluster-user
-kubectl create secret generic products-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='products' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# inventory-mongodb-cluster-user
-kubectl create secret generic inventory-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='inventory' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# carts-mongodb-cluster-user
-kubectl create secret generic carts-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='carts' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# orders-mongodb-cluster-user
-kubectl create secret generic orders-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='orders' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# payments-mongodb-cluster-user
-kubectl create secret generic payments-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='payments' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# shipping-mongodb-cluster-user
-kubectl create secret generic shipping-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='shipping' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# recommendations-mongodb-cluster-user
-kubectl create secret generic recommendations-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='recommendations' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# search-mongodb-cluster-user
-kubectl create secret generic search-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='search' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# notifications-mongodb-cluster-user
-kubectl create secret generic notifications-mongodb-cluster-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='notifications' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
-
-# mongodb-cluster-exporter-user
-kubectl create secret generic mongodb-cluster-exporter-user -n api \
-        --type='kubernetes.io/basic-auth' \
-        --from-literal=username='exporter' \
-        --from-literal=password=$(shuf -er -n32  {A..Z} {a..z} {0..9} | tr -d '\n')
+        --from-literal=username="${service}" \
+        --from-literal="password=$(shuf -er -n32 {A..Z} {a..z} {0..9} | tr -d '\n')"
+done
 
 mkdir -p /root/data/api/mongodb-cluster/config-volume-0
 mkdir /root/data/api/mongodb-cluster/config-volume-1
@@ -738,4 +615,21 @@ mkdir /root/data/api/mongodb-cluster/volume-2
 cd /home/k8s
 git pull
 kubectl apply -f api/mongodb-cluster
+```
+
+### Развертывание микросервиса для работы с продуктами
+
+Во-первых, разверните микросервис с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/products
+```
+
+Во-вторых, обновите настройки PgBouncer для базы данных микросервиса:
+
+```shell
+kubectl delete -f api/postgres-cluster/pooler-rw.yaml
+kubectl apply -f api/postgres-cluster/pooler-rw.yaml
 ```
