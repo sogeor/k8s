@@ -599,6 +599,11 @@ kubectl apply -f api/postgres-cluster
 Для того чтобы начать работу с MongoDB кластером, выполните следующие команды:
 
 ```shell
+kubectl create secret generic mongodb-cluster-exporter-user -n api \
+    --type='kubernetes.io/basic-auth' \
+    --from-literal=username=exporter \
+    --from-literal="password=$(shuf -er -n32 {A..Z} {a..z} {0..9} | tr -d '\n')"
+
 for service in cart inventory notifications orders payments products; do
     kubectl create secret generic "${service}-mongodb-cluster-user" -n api \
         --type='kubernetes.io/basic-auth' \
