@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: monitoring-alloy-volume
+  labels:
+    app.kubernetes.io/name: monitoring-alloy-volume
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  local:
+    path: /root/data/monitoring/alloy/volume
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - "maxwell"
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: native-storage
