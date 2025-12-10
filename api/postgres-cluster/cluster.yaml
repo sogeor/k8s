@@ -25,14 +25,9 @@ spec:
           app.kubernetes.io/name: api-postgres-cluster-volume
   managed:
     roles:
-      - name: users
+      - name: cart
         passwordSecret:
-          name: users-postgres-cluster-role
-        login: true
-        createdb: true
-      - name: products
-        passwordSecret:
-          name: products-postgres-cluster-role
+          name: cart-postgres-cluster-role
         login: true
         createdb: true
       - name: inventory
@@ -40,9 +35,9 @@ spec:
           name: inventory-postgres-cluster-role
         login: true
         createdb: true
-      - name: carts
+      - name: notifications
         passwordSecret:
-          name: carts-postgres-cluster-role
+          name: notifications-postgres-cluster-role
         login: true
         createdb: true
       - name: orders
@@ -55,24 +50,9 @@ spec:
           name: payments-postgres-cluster-role
         login: true
         createdb: true
-      - name: shipping
+      - name: products
         passwordSecret:
-          name: shipping-postgres-cluster-role
-        login: true
-        createdb: true
-      - name: recommendations
-        passwordSecret:
-          name: recommendations-postgres-cluster-role
-        login: true
-        createdb: true
-      - name: search
-        passwordSecret:
-          name: search-postgres-cluster-role
-        login: true
-        createdb: true
-      - name: notifications
-        passwordSecret:
-          name: notifications-postgres-cluster-role
+          name: products-postgres-cluster-role
         login: true
         createdb: true
   monitoring:
