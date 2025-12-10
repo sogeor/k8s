@@ -1,0 +1,22 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: payments
+  namespace: api
+spec:
+  hosts:
+    - "api.sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - match:
+        - uri:
+            prefix: /v1/payments
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: payments.api.svc.cluster.local
+            subset: v1
+  exportTo:
+    - "istio-system"

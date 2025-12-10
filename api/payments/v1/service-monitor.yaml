@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: payments-v1
+  namespace: api
+spec:
+  endpoints:
+    - interval: 15s
+      scrapeTimeout: 10s
+      path: /v1/payments/actuator/prometheus
+      port: http-management
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: payments-service
+      app.kubernetes.io/version: v1
