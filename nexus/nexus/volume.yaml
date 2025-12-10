@@ -8,7 +8,7 @@ spec:
   accessModes:
     - ReadWriteOnce
   capacity:
-    storage: 16Gi
+    storage: 64Gi
   local:
     path: /root/data/nexus/nexus/volume
   nodeAffinity:
