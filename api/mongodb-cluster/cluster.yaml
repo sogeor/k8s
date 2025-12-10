@@ -43,21 +43,6 @@ spec:
           resources:
             requests:
               storage: 16Gi
-  #  pmm:
-  #    enabled: false
-  #    image: percona/pmm-client:3.4.1
-  #    serverHost: monitoring-service
-  #    containerSecurityContext: {}
-  #    customClusterName: configurations-mongodb-cluster
-  #    mongodParams: --environment=ENVIRONMENT
-  #    mongosParams: --environment=ENVIRONMENT
-  #    resources:
-  #      requests:
-  #        memory: 150M
-  #        cpu: 300m
-  #      limits:
-  #        memory: 256M
-  #        cpu: 400m
   sharding:
     enabled: true
     configsvrReplSet:
@@ -99,11 +84,81 @@ spec:
           cpu: "300m"
           memory: "1Gi"
   roles:
-    - role: configurations
-      db: configurations
+    - role: cart
+      db: cart
       privileges:
         - resource:
-            db: configurations
+            db: cart
+            collection: ""
+          actions:
+            - find
+            - insert
+            - update
+            - remove
+            - createIndex
+            - dropIndex
+            - bypassDocumentValidation
+    - role: inventory
+      db: inventory
+      privileges:
+        - resource:
+            db: inventory
+            collection: ""
+          actions:
+            - find
+            - insert
+            - update
+            - remove
+            - createIndex
+            - dropIndex
+            - bypassDocumentValidation
+    - role: notifications
+      db: notifications
+      privileges:
+        - resource:
+            db: notifications
+            collection: ""
+          actions:
+            - find
+            - insert
+            - update
+            - remove
+            - createIndex
+            - dropIndex
+            - bypassDocumentValidation
+    - role: orders
+      db: orders
+      privileges:
+        - resource:
+            db: orders
+            collection: ""
+          actions:
+            - find
+            - insert
+            - update
+            - remove
+            - createIndex
+            - dropIndex
+            - bypassDocumentValidation
+    - role: payments
+      db: payments
+      privileges:
+        - resource:
+            db: payments
+            collection: ""
+          actions:
+            - find
+            - insert
+            - update
+            - remove
+            - createIndex
+            - dropIndex
+            - bypassDocumentValidation
+    - role: products
+      db: products
+      privileges:
+        - resource:
+            db: products
             collection: ""
           actions:
             - find
@@ -124,22 +179,14 @@ spec:
           db: admin
         - name: read
           db: local
-    - name: users
+    - name: cart
       db: admin
       passwordSecretRef:
-        name: users-mongodb-cluster-user
+        name: cart-mongodb-cluster-user
         key: password
       roles:
-        - name: users
-          db: users
-    - name: products
-      db: admin
-      passwordSecretRef:
-        name: products-mongodb-cluster-user
-        key: password
-      roles:
-        - name: products
-          db: products
+        - name: cart
+          db: cart
     - name: inventory
       db: admin
       passwordSecretRef:
@@ -148,14 +195,14 @@ spec:
       roles:
         - name: inventory
           db: inventory
-    - name: carts
+    - name: notifications
       db: admin
       passwordSecretRef:
-        name: carts-mongodb-cluster-user
+        name: notifications-mongodb-cluster-user
         key: password
       roles:
-        - name: carts
-          db: carts
+        - name: notifications
+          db: notifications
     - name: orders
       db: admin
       passwordSecretRef:
@@ -172,35 +219,11 @@ spec:
       roles:
         - name: payments
           db: payments
-    - name: shipping
+    - name: products
       db: admin
       passwordSecretRef:
-        name: shipping-mongodb-cluster-user
+        name: products-mongodb-cluster-user
         key: password
       roles:
-        - name: shipping
-          db: shipping
-    - name: recommendations
-      db: admin
-      passwordSecretRef:
-        name: recommendations-mongodb-cluster-user
-        key: password
-      roles:
-        - name: recommendations
-          db: recommendations
-    - name: search
-      db: admin
-      passwordSecretRef:
-        name: search-mongodb-cluster-user
-        key: password
-      roles:
-        - name: search
-          db: search
-    - name: notifications
-      db: admin
-      passwordSecretRef:
-        name: notifications-mongodb-cluster-user
-        key: password
-      roles:
-        - name: notifications
-          db: notifications
+        - name: products
+          db: products
