@@ -1,0 +1,11 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: products
+  namespace: api
+spec:
+  host: products.api.svc.cluster.local
+  subsets:
+    - name: v1
+      labels:
+        app.kubernetes.io/version: v1
