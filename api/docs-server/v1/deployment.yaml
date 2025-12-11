@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-server-v1
+  namespace: api
+  labels:
+    app.kubernetes.io/name: docs-server
+    app.kubernetes.io/version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docs-server
+      app.kubernetes.io/version: v1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: docs-server
+        app.kubernetes.io/version: v1
+    spec:
+      imagePullSecrets:
+        - name: nexus-docker-public
+      containers:
+        - name: docs-server
+          image: nexus.sogeor.com/docker-public/sogeor/docs-server:master
+          imagePullPolicy: Always
+          env:
+            - name: CONFIG_SERVER_URL
+              value: "http://config-server.api.svc.cluster.local:8080"
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: http-management
+              containerPort: 9090
+          startupProbe:
+            httpGet:
+              path: /v1/docs-server/actuator/health
+              port: http-management
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /v1/docs-server/actuator/health
+              port: http-management
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /v1/docs-server/actuator/health
+              port: http-management
+            periodSeconds: 30
+            failureThreshold: 6
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi

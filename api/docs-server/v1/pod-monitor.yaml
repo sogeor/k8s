@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: docs-server-v1
+  namespace: api
+spec:
+  podMetricsEndpoints:
+    - interval: 15s
+      scrapeTimeout: 10s
+      path: /v1/docs-server/actuator/prometheus
+      port: http-management
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: docs-server
+      app.kubernetes.io/version: v1

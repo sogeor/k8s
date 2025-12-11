@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: docs-server
+  namespace: api
+spec:
+  hosts:
+    - "docs-server.api.svc.cluster.local"
+  http:
+    - match:
+        - uri:
+            prefix: /v1/docs-server
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: docs-server.api.svc.cluster.local
+            subset: v1
+  exportTo: []
