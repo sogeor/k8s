@@ -22,17 +22,19 @@ spec:
         - name: nexus-docker-public
       containers:
         - name: inventory
-          image: nexus.sogeor.com/docker-public/sogeor/user-service:master
+          image: nexus.sogeor.com/docker-public/sogeor/inventory-service:master
           imagePullPolicy: Always
           env:
-            - name: DATASOURCE_URL
-              value: "jdbc:postgresql://postgres-cluster-pooler-rw:5432/inventory"
-            - name: DATASOURCE_USERNAME
+            - name: CONFIG_SERVER_URL
+              value: "http://config-server.api.svc.cluster.local:8080"
+            - name: R2DBC_URL
+              value: "r2dbc:postgresql://postgres-cluster-pooler-rw:5432/inventory"
+            - name: R2DBC_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: inventory-postgres-cluster-role
                   key: username
-            - name: DATASOURCE_PASSWORD
+            - name: R2DBC_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: inventory-postgres-cluster-role
