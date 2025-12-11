@@ -77,7 +77,7 @@ kubectl edit configmap -n kube-system kube-proxy
 
 ```yaml
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration 
+kind: KubeProxyConfiguration
 ```
 
 После этого задать следующие значения:
@@ -632,6 +632,55 @@ cd /home/k8s
 git pull
 kubectl apply -f api/mongodb-cluster
 ```
+
+### Развертывание сервера конфигураций микросервисов
+
+Во-первых, необходимо получить токен Github с правами на чтение содержимого репозитория. Для этого выполните следующие
+действия:
+
+1. Войдите на Github, перейдя по адресу: https://github.com/settings/personal-access-tokens.
+2. В разделе `Fine-grained personal access tokens` нажмите `Generate new token`.
+3. В поле `Token name` установите значение `Sogeor Config Server`.
+4. В поле `Resource owner` выберите владельца репозитория (например, sogeor).
+5. В поле `Expiration` по желанию выберите иное значение.
+6. В поле `Repository access` выберите `Only select repositories`.
+7. Нажмите `Select repositories` и поставьте галочку возле `sogeor/configs`.
+8. В поле `Permissions`, в разделе `Repositories`, нажмите `Add permissions`.
+9. Поставьте галочку возле `Contents`.
+10. Нажмите `Generate token`.
+11. Нажмите `Generate token`.
+12. Скопируйте токен и сохраните его для дальнейших действий.
+
+Во-вторых, необходимо сохранить токен Github в кластере. Для этого выполните следующие команды:
+
+```shell
+GITHUB_OWNER= # Укажите здесь владельца репозитория, выбранного на 4
+GITHUB_TOKEN= # Укажите здесь токен Github, полученный на 12 шаге
+kubectl create secret generic config-server-github -n api \
+        --type='kubernetes.io/basic-auth' \
+        --from-literal=username=${GITHUB_OWNER} \
+        --from-literal=password=${GITHUB_TOKEN}
+```
+
+В-третьих, разверните сервер с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/config-server
+```
+
+> Если ваш репозиторий отличается от https://github.com/sogeor/configs, то необходимо указать иную ссылку в
+> api/config-server/v1/deployment.yaml.
+
+### Развертывание сервера документаций микросервисов
+
+Для того чтобы развернуть сервер, выполните следующие команды:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/docs-server
 
 ### Развертывание микросервиса для работы с продуктами
 
