@@ -27,18 +27,6 @@ spec:
           env:
             - name: CONFIG_SERVER_URL
               value: "http://config-server.api.svc.cluster.local:8080"
-            - name: R2DBC_URL
-              value: "r2dbc:postgresql://postgres-cluster-pooler-rw:5432/products"
-            - name: R2DBC_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: products-postgres-cluster-role
-                  key: username
-            - name: R2DBC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: products-postgres-cluster-role
-                  key: password
             - name: MONGODB_HOST
               value: "mongodb-cluster-mongos"
             - name: MONGODB_USERNAME
@@ -53,6 +41,18 @@ spec:
                   key: password
             - name: KAFKA_URL
               value: "http://kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            - name: KC_ISSUER_URI
+              value: "https://sso.sogeor.com/realms/system"
+            - name: KC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: products
+                  key: client-id
+            - name: KC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: products
+                  key: client-secret
           ports:
             - name: http
               containerPort: 8080
