@@ -30,7 +30,11 @@ spec:
               containerPort: 12345
           readinessProbe:
             httpGet:
-              path: /api/health
+              path: /alloy/-/ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /alloy/-/healthy
               port: http
           resources:
             limits:
