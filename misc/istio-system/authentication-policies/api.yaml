@@ -12,16 +12,20 @@ spec:
     - from:
         - source:
             requestPrincipals:
+              - "https://sso.sogeor.com/realms/master/*"
               - "https://sso.sogeor.com/realms/system/*"
+              - "https://sso.sogeor.com/realms/public/*"
       to:
         - operation:
             hosts:
               - "api.sogeor.com"
               - "api.sogeor.com:*"
             notPaths:
+              - "/robots.txt"
+              - "/oauth2"
               - "/oauth2/{**}"
-              - "/{*}/{*}/actuator"
-              - "/{*}/{*}/actuator/{**}"
+              - "/v1/docs-server"
+              - "/v1/docs-server/{**}"
     - to:
         - operation:
             hosts:
@@ -29,6 +33,7 @@ spec:
               - "api.sogeor.com:*"
             paths:
               - "/robots.txt"
+              - "/oauth2"
               - "/oauth2/{**}"
-              - "/{*}/{*}/actuator"
-              - "/{*}/{*}/actuator/{**}"
+              - "/v1/docs-server"
+              - "/v1/docs-server/{**}"
