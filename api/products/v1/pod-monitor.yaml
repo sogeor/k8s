@@ -1,10 +1,10 @@
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 metadata:
   name: products-v1
   namespace: api
 spec:
-  endpoints:
+  podMetricsEndpoints:
     - interval: 15s
       scrapeTimeout: 10s
       path: /v1/products/actuator/prometheus
