@@ -14,6 +14,18 @@ spec:
             prefix: /oauth2
         - uri:
             prefix: /v1/docs-server
+        - uri:
+            prefix: /v1/cart/actuator/openapi
+        - uri:
+            prefix: /v1/inventory/actuator/openapi
+        - uri:
+            prefix: /v1/notifications/actuator/openapi
+        - uri:
+            prefix: /v1/orders/actuator/openapi
+        - uri:
+            prefix: /v1/payments/actuator/openapi
+        - uri:
+            prefix: /v1/products/actuator/openapi
       route:
         - destination:
             port:
