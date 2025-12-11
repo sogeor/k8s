@@ -681,6 +681,24 @@ kubectl apply -f api/config-server
 cd /home/k8s
 git pull
 kubectl apply -f api/docs-server
+```
+
+### Развертывание микросервиса для работы с запасами продуктов
+
+Во-первых, разверните микросервис с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/inventory
+```
+
+Во-вторых, обновите настройки PgBouncer для базы данных микросервиса:
+
+```shell
+kubectl delete -f api/postgres-cluster/pooler-rw.yaml
+kubectl apply -f api/postgres-cluster/pooler-rw.yaml
+```
 
 ### Развертывание микросервиса для работы с продуктами
 
