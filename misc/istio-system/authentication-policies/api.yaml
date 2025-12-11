@@ -26,6 +26,8 @@ spec:
               - "/oauth2/{**}"
               - "/v1/docs-server"
               - "/v1/docs-server/{**}"
+              - "/v1/{**}"
+              - "/v1/{*}/actuator/openapi"
     - to:
         - operation:
             hosts:
@@ -37,3 +39,5 @@ spec:
               - "/oauth2/{**}"
               - "/v1/docs-server"
               - "/v1/docs-server/{**}"
+              - "/v1/{**}"
+              - "/v1/{*}/actuator/openapi"
