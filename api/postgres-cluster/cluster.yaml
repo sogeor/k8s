@@ -50,11 +50,6 @@ spec:
           name: payments-postgres-cluster-role
         login: true
         createdb: true
-      - name: products
-        passwordSecret:
-          name: products-postgres-cluster-role
-        login: true
-        createdb: true
   monitoring:
     tls:
       enabled: true
