@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: api
+  labels:
+    app.kubernetes.io/name: config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: config-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: config-server
+    spec:
+      imagePullSecrets:
+        - name: nexus-docker-public
+      containers:
+        - name: config-server
+          image: nexus.sogeor.com/docker-public/sogeor/config-server:master
+          imagePullPolicy: Always
+          env:
+            - name: GITHUB_URI
+              value: "https://github.com/sogeor/configs"
+            - name: GITHUB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: config-server-github
+                  key: username
+            - name: GITHUB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: config-server-github
+                  key: password
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: http-management
+              containerPort: 9090
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http-management
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http-management
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http-management
+            periodSeconds: 30
+            failureThreshold: 6
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
