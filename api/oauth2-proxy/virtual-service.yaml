@@ -13,7 +13,7 @@ spec:
         - uri:
             prefix: /oauth2
         - uri:
-            regex: ^\/v\d+\/actuator(\/.*)?$
+            prefix: /v1/docs-server
       route:
         - destination:
             port:
