@@ -20,11 +20,11 @@ spec:
     fsGroup: 2000
     runAsNonRoot: true
     runAsUser: 1000
-  serviceMonitorNamespaceSelector: { }
-  serviceMonitorSelector: { }
-  podMonitorNamespaceSelector: { }
-  podMonitorSelector: { }
-  probeNamespaceSelector: { }
-  probeSelector: { }
-  scrapeConfigNamespaceSelector: { }
-  scrapeConfigSelector: { }
+  serviceMonitorNamespaceSelector: {}
+  serviceMonitorSelector: {}
+  podMonitorNamespaceSelector: {}
+  podMonitorSelector: {}
+  probeNamespaceSelector: {}
+  probeSelector: {}
+  scrapeConfigNamespaceSelector: {}
+  scrapeConfigSelector: {}
