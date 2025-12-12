@@ -39,7 +39,7 @@ spec:
                 secretKeyRef:
                   name: products-mongodb-cluster-user
                   key: password
-            - name: KAFKA_URL
+            - name: KAFKA_BOOTSTRAP_SERVERS
               value: "http://kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
             - name: KC_ISSUER_URI
               value: "https://sso.sogeor.com/realms/system"
