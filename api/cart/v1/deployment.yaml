@@ -22,21 +22,11 @@ spec:
         - name: nexus-docker-public
       containers:
         - name: cart
-          image: nexus.sogeor.com/docker-public/sogeor/user-service:master
+          image: nexus.sogeor.com/docker-public/sogeor/cart-service:master
           imagePullPolicy: Always
           env:
-            - name: DATASOURCE_URL
-              value: "jdbc:postgresql://postgres-cluster-pooler-rw:5432/cart"
-            - name: DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: cart-postgres-cluster-role
-                  key: username
-            - name: DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: cart-postgres-cluster-role
-                  key: password
+            - name: CONFIG_SERVER_URL
+              value: "http://config-server.api.svc.cluster.local:8080"
             - name: MONGODB_HOST
               value: "mongodb-cluster-mongos"
             - name: MONGODB_USERNAME
@@ -49,8 +39,20 @@ spec:
                 secretKeyRef:
                   name: cart-mongodb-cluster-user
                   key: password
-            - name: KAFKA_URL
+            - name: KAFKA_BOOTSTRAP_SERVERS
               value: "http://kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            - name: KC_ISSUER_URI
+              value: "https://sso.sogeor.com/realms/system"
+            - name: KC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: cart
+                  key: client-id
+            - name: KC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: cart
+                  key: client-secret
           ports:
             - name: http
               containerPort: 8080

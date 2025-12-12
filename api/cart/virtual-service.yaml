@@ -12,6 +12,16 @@ spec:
     - match:
         - uri:
             prefix: /v1/cart
+          port: 9090
+      route:
+        - destination:
+            port:
+              number: 9090
+            host: cart.api.svc.cluster.local
+            subset: v1
+    - match:
+        - uri:
+            prefix: /v1/cart
       route:
         - destination:
             port:
