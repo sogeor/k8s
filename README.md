@@ -589,7 +589,7 @@ kubectl apply -f api/oauth2-proxy
 Для того чтобы начать работу с PostgreSQL кластером, выполните следующие команды:
 
 ```shell
-for service in cart inventory notifications orders payments; do
+for service in inventory notifications orders payments; do
     kubectl create secret generic "${service}-postgres-cluster-role" -n api \
         --type='kubernetes.io/basic-auth' \
         --from-literal=username="${service}" \
@@ -615,7 +615,7 @@ kubectl create secret generic mongodb-cluster-exporter-user -n api \
     --from-literal=username=exporter \
     --from-literal="password=$(shuf -er -n32 {A..Z} {a..z} {0..9} | tr -d '\n')"
 
-for service in cart inventory notifications orders payments products; do
+for service in cart notifications orders payments products; do
     kubectl create secret generic "${service}-mongodb-cluster-user" -n api \
         --type='kubernetes.io/basic-auth' \
         --from-literal=username="${service}" \
@@ -683,9 +683,45 @@ git pull
 kubectl apply -f api/docs-server
 ```
 
+### Развертывание микросервиса для работы с корзинами продуктов
+
+Во-первых, создайте в system области Keycloak сервера клиент с именем `api-cart-service` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+Во-вторых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_API_CART_SERVICE_SECRET= # Укажите здесь пароль клиента api-cart-service
+kubectl create secret generic cart -n api \
+        --type='Opaque' \
+        --from-literal=client-id='api-cart-service' \
+        --from-literal=client-secret=${KC_API_CART_SERVICE_SECRET}
+```
+
+В-третьих, разверните микросервис с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/cart
+```
+
 ### Развертывание микросервиса для работы с запасами продуктов
 
-Во-первых, разверните микросервис с помощью следующих команд:
+Во-первых, создайте в system области Keycloak сервера клиент с именем `api-inventory-service` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+Во-вторых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_API_INVENTORY_SERVICE_SECRET= # Укажите здесь пароль клиента api-inventory-service
+kubectl create secret generic inventory -n api \
+        --type='Opaque' \
+        --from-literal=client-id='api-inventory-service' \
+        --from-literal=client-secret=${KC_API_INVENTORY_SERVICE_SECRET}
+```
+
+В-третьих, разверните микросервис с помощью следующих команд:
 
 ```shell
 cd /home/k8s
@@ -693,7 +729,7 @@ git pull
 kubectl apply -f api/inventory
 ```
 
-Во-вторых, обновите настройки PgBouncer для базы данных микросервиса:
+В-четвёртых, обновите настройки PgBouncer для базы данных микросервиса:
 
 ```shell
 kubectl delete -f api/postgres-cluster/pooler-rw.yaml
