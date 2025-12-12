@@ -98,20 +98,6 @@ spec:
             - createIndex
             - dropIndex
             - bypassDocumentValidation
-    - role: inventory
-      db: inventory
-      privileges:
-        - resource:
-            db: inventory
-            collection: ""
-          actions:
-            - find
-            - insert
-            - update
-            - remove
-            - createIndex
-            - dropIndex
-            - bypassDocumentValidation
     - role: notifications
       db: notifications
       privileges:
@@ -187,14 +173,6 @@ spec:
       roles:
         - name: cart
           db: cart
-    - name: inventory
-      db: admin
-      passwordSecretRef:
-        name: inventory-mongodb-cluster-user
-        key: password
-      roles:
-        - name: inventory
-          db: inventory
     - name: notifications
       db: admin
       passwordSecretRef:
