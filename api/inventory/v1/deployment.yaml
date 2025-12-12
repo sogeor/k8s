@@ -39,20 +39,20 @@ spec:
                 secretKeyRef:
                   name: inventory-postgres-cluster-role
                   key: password
-            - name: MONGODB_HOST
-              value: "mongodb-cluster-mongos"
-            - name: MONGODB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: inventory-mongodb-cluster-user
-                  key: username
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: inventory-mongodb-cluster-user
-                  key: password
-            - name: KAFKA_URL
+            - name: KAFKA_BOOTSTRAP_SERVERS
               value: "http://kafka-cluster-kafka-bootstrap.kafka.svc.cluster.local:9092"
+            - name: KC_ISSUER_URI
+              value: "https://sso.sogeor.com/realms/system"
+            - name: KC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: inventory
+                  key: client-id
+            - name: KC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: inventory
+                  key: client-secret
           ports:
             - name: http
               containerPort: 8080
