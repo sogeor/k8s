@@ -25,11 +25,6 @@ spec:
           app.kubernetes.io/name: api-postgres-cluster-volume
   managed:
     roles:
-      - name: cart
-        passwordSecret:
-          name: cart-postgres-cluster-role
-        login: true
-        createdb: true
       - name: inventory
         passwordSecret:
           name: inventory-postgres-cluster-role
