@@ -12,6 +12,16 @@ spec:
     - match:
         - uri:
             prefix: /v1/payments
+          port: 9090
+      route:
+        - destination:
+            port:
+              number: 9090
+            host: payments.api.svc.cluster.local
+            subset: v1
+    - match:
+        - uri:
+            prefix: /v1/payments
       route:
         - destination:
             port:

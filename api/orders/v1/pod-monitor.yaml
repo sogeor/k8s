@@ -1,15 +1,15 @@
 apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
+kind: PodMonitor
 metadata:
-  name: notifications-v1
+  name: orders-v1
   namespace: api
 spec:
-  endpoints:
+  podMetricsEndpoints:
     - interval: 15s
       scrapeTimeout: 10s
-      path: /v1/notifications/actuator/prometheus
+      path: /v1/orders/actuator/prometheus
       port: http-management
   selector:
     matchLabels:
-      app.kubernetes.io/name: notifications-service
+      app.kubernetes.io/name: orders-service
       app.kubernetes.io/version: v1
