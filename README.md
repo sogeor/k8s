@@ -736,6 +736,89 @@ kubectl delete -f api/postgres-cluster/pooler-rw.yaml
 kubectl apply -f api/postgres-cluster/pooler-rw.yaml
 ```
 
+### Развертывание микросервиса для работы с уведомлениями
+
+Во-первых, создайте в system области Keycloak сервера клиент с именем `api-notifications-service` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+Во-вторых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_API_NOTIFICATIONS_SERVICE_SECRET= # Укажите здесь пароль клиента api-notifications-service
+kubectl create secret generic notifications -n api \
+        --type='Opaque' \
+        --from-literal=client-id='api-notifications-service' \
+        --from-literal=client-secret=${KC_API_NOTIFICATIONS_SERVICE_SECRET}
+```
+
+В-третьих, разверните микросервис с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/notifications
+```
+
+### Развертывание микросервиса для работы с заказами
+
+Во-первых, создайте в system области Keycloak сервера клиент с именем `api-orders-service` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+Во-вторых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_API_ORDERS_SERVICE_SECRET= # Укажите здесь пароль клиента api-orders-service
+kubectl create secret generic orders -n api \
+        --type='Opaque' \
+        --from-literal=client-id='api-orders-service' \
+        --from-literal=client-secret=${KC_API_ORDERS_SERVICE_SECRET}
+```
+
+В-третьих, разверните микросервис с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/orders
+```
+
+В-четвёртых, обновите настройки PgBouncer для базы данных микросервиса:
+
+```shell
+kubectl delete -f api/postgres-cluster/pooler-rw.yaml
+kubectl apply -f api/postgres-cluster/pooler-rw.yaml
+```
+
+### Развертывание микросервиса для работы с платежами
+
+Во-первых, создайте в system области Keycloak сервера клиент с именем `api-payments-service` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+Во-вторых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_API_PAYMENTS_SERVICE_SECRET= # Укажите здесь пароль клиента api-payments-service
+kubectl create secret generic payments -n api \
+        --type='Opaque' \
+        --from-literal=client-id='api-payments-service' \
+        --from-literal=client-secret=${KC_API_PAYMENTS_SERVICE_SECRET}
+```
+
+В-третьих, разверните микросервис с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f api/payments
+```
+
+В-четвёртых, обновите настройки PgBouncer для базы данных микросервиса:
+
+```shell
+kubectl delete -f api/postgres-cluster/pooler-rw.yaml
+kubectl apply -f api/postgres-cluster/pooler-rw.yaml
+```
+
 ### Развертывание микросервиса для работы с продуктами
 
 Во-первых, создайте в system области Keycloak сервера клиент с именем `api-products-service` аналогично
