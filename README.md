@@ -329,17 +329,6 @@ git pull
 kubectl apply -f misc/monitoring/alertmanager
 ```
 
-### Развертывание Alloy
-
-Для того чтобы начать работу с Alloy, выполните следующие команды:
-
-```shell
-mkdir -p /root/data/monitoring/alloy/volume
-cd /home/k8s
-git pull
-kubectl apply -f misc/monitoring/alloy
-```
-
 ### Развертывание OAuth Proxy для мониторинга
 
 Для того чтобы начать работу с OAuth Proxy, выполните следующие команды:
@@ -548,7 +537,7 @@ for suffix in github hub public releases snapshots; do
     kubectl annotate secret nexus-docker-${suffix} -n misc \
         "reflector.v1.k8s.emberstack.com/reflection-allowed=true" \
         "reflector.v1.k8s.emberstack.com/reflection-auto-enabled=true" \
-        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,service"
+        "reflector.v1.k8s.emberstack.com/reflection-auto-namespaces=api,service,web"
 done
 ```
 
@@ -840,4 +829,41 @@ kubectl create secret generic products -n api \
 cd /home/k8s
 git pull
 kubectl apply -f api/products
+```
+
+
+### Развертывание веб-приложения
+
+Во-первых, создайте в system области Keycloak сервера клиент с именем `web` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+Во-вторых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_WEB_SYSTEM_SECRET= # Укажите здесь пароль клиента web в system области
+kubectl create secret generic web-system -n web \
+        --type='Opaque' \
+        --from-literal=client-id='web' \
+        --from-literal=client-secret=${KC_WEB_SYSTEM_SECRET}
+```
+
+В-третьих, создайте в public области Keycloak сервера клиент с именем `web` аналогично
+`api-oauth2-proxy`, но не задавайте поля `PKCE Method` и `Valid redirect URIs`. Не забудьте скопировать пароль клиента.
+
+В-четвёртых, сохраните логин и пароль клиента в кластере:
+
+```shell
+KC_WEB_PUBLIC_SECRET= # Укажите здесь пароль клиента web в public области
+kubectl create secret generic web-public -n web \
+        --type='Opaque' \
+        --from-literal=client-id='web' \
+        --from-literal=client-secret=${KC_WEB_PUBLIC_SECRET}
+```
+
+В-пятых, разверните веб-приложение с помощью следующих команд:
+
+```shell
+cd /home/k8s
+git pull
+kubectl apply -f web
 ```

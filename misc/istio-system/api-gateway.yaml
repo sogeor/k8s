@@ -25,6 +25,7 @@ spec:
         - "nexus/nexus.sogeor.com"
         - "service/service.sogeor.com"
         - "sso/sso.sogeor.com"
+        - "web/sogeor.com"
       tls:
         mode: SIMPLE
         credentialName: master-tls

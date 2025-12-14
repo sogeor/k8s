@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-v1
+  namespace: web
+  labels:
+    app.kubernetes.io/name: web
+    app.kubernetes.io/version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+      app.kubernetes.io/version: v1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: web
+        app.kubernetes.io/version: v1
+    spec:
+      imagePullSecrets:
+        - name: nexus-docker-public
+      containers:
+        - name: web
+          image: nexus.sogeor.com/docker-public/sogeor/web:master
+          imagePullPolicy: Always
+          env:
+            - name: CONFIG_SERVER_URL
+              value: "http://config-server.api.svc.cluster.local:8080"
+            - name: KC_PUBLIC_ISSUER_URI
+              value: "https://sso.sogeor.com/realms/public"
+            - name: KC_PUBLIC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: web-public
+                  key: client-id
+            - name: KC_PUBLIC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: web-public
+                  key: client-secret
+            - name: KC_SYSTEM_ISSUER_URI
+              value: "https://sso.sogeor.com/realms/system"
+            - name: KC_SYSTEM_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: web-system
+                  key: client-id
+            - name: KC_SYSTEM_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: web-system
+                  key: client-secret
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: http-management
+              containerPort: 9090
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http-management
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http-management
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http-management
+            periodSeconds: 30
+            failureThreshold: 6
+          resources:
+            limits:
+              memory: 1Gi
+            requests:
+              memory: 512Mi

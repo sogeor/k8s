@@ -15,8 +15,6 @@ spec:
         - uri:
             prefix: /alertmanager
         - uri:
-            prefix: /alloy
-        - uri:
             prefix: /grafana
         - uri:
             prefix: /prometheus

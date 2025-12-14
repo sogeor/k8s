@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: web
+  namespace: web
+spec:
+  hosts:
+    - "sogeor.com"
+  gateways:
+    - "istio-system/master"
+  http:
+    - route:
+        - destination:
+            port:
+              number: 8080
+            host: web.web.svc.cluster.local
+            subset: v1
+  exportTo:
+    - "istio-system"
